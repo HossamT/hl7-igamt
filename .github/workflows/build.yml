@@ -67,7 +67,7 @@ jobs:
           
       - name: Build Prod Front-End
         working-directory: ${{env.front-end-directory}}
-        run: npm run aot
+        run: npm run ng-high-memory -- build --prod
       
       - name: Build Auth
         working-directory: ${{env.auth-project-directory}}
