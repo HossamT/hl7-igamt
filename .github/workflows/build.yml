@@ -10,13 +10,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      front-end-directory: ./igamt-hl7-client-v2
+      back-end-directory: hl7-igamt
+      front-end-directory: hl7-igamt/igamt-hl7-client-v2
+      auth-project-directory: hl7-auth
     strategy:
       matrix:
         node-version: [10.x]
 
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout IGAMT
+        uses: actions/checkout@v2
+        with:
+          path: hl7-igamt
+
+      - name: Checkout AUTH
+        uses: actions/checkout@v2
+        with:
+          repository: usnistgov/hl7-auth
+          path: hl7-auth
 
       - name: Cache node modules
         uses: actions/cache@v2
@@ -26,10 +37,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
             
-      - name: Node ${{ matrix.node-version }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+            
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+          
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '9.0.4'
+          java-package: jdk
+          architecture: x64
           
       - name: Install Dependencies
         working-directory: ${{env.front-end-directory}}
@@ -42,3 +68,11 @@ jobs:
       - name: Build Prod Front-End
         working-directory: ${{env.front-end-directory}}
         run: npm run aot
+      
+      - name: Build Auth
+        working-directory: ${{env.auth-project-directory}}
+        run: mvn clean install
+      
+      - name: Build IGAMT
+        working-directory: ${{env.back-end-directory}}
+        run: mvn clean install
