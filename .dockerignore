@@ -3,5 +3,5 @@
 
 # Allow files and directories
 !bootstrap/target/hl7-igamt.jar
-!public_key.txt
+!unencryped_public_key.txt
 !run.sh
