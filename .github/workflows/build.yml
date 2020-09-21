@@ -75,4 +75,28 @@ jobs:
       
       - name: Build IGAMT
         working-directory: ${{env.back-end-directory}}
-        run: mvn clean install
+        run: mvn clean package -Dmaven.test.skip=true -q
+      
+      - name: Decrypt Secrets
+        working-directory: ${{env.back-end-directory}}
+        env:
+          PK_ENCRYPTION_KEY: ${{ secrets.PK_ENCRYPTION_KEY }}
+        run: gpg --quiet --batch --yes --decrypt --passphrase="$PK_ENCRYPTION_KEY" \
+             --output unencryped_public_key.txt public_key.txt.gpg
+      
+      - name: Build Docker Image
+        working-directory: ${{env.back-end-directory}}
+        run: docker build . -t hossamt/igamt-build:1.0.0
+        
+      - name: Docker Login
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_LOGIN }}   
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASS }}  
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+          
+      - name: Publish Image to DockerHub
+        working-directory: ${{env.back-end-directory}}
+        run: docker push hossamt/igamt-build:1.0.0
+        
+        
